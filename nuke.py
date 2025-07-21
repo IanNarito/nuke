@@ -207,13 +207,13 @@ if __name__ == "__main__":
     if len(sys.argv) < 5:
         help_banner = f"""{Fore.RED}
 ╔════════════════════════════════════════════════════════════════════╗
-║         {Fore.YELLOW}⚠  INSUFFICIENT ARGUMENTS — READ CAREFULLY ⚠{Fore.RED}          ║
+║         {Fore.YELLOW}⚠  INSUFFICIENT ARGUMENTS — READ CAREFULLY ⚠{Fore.RED}               ║
 ╠════════════════════════════════════════════════════════════════════╣
 ║  {Fore.WHITE}Usage  :{Fore.CYAN} python nuke.py <mode> <ip> <port> <duration>             {Fore.RED}║
-║  {Fore.WHITE}Example :{Fore.CYAN} python nuke.py tcp 1.1.1.1 80 60                       {Fore.RED}║
+║  {Fore.WHITE}Example :{Fore.CYAN} python nuke.py tcp 1.1.1.1 80 60                        {Fore.RED}║
 ╠════════════════════════════════════════════════════════════════════╣
-║  {Fore.WHITE}Available Modes:{Fore.GREEN}                                                 {Fore.RED}║
-║    ▸ tcp      ▸ udp      ▸ syn      ▸ cps                        {Fore.RED}║
+║  {Fore.WHITE}Available Modes:{Fore.GREEN}                                                  {Fore.RED}║
+║    ▸ tcp      ▸ udp      ▸ syn      ▸ cps                          {Fore.RED}║
 ║    ▸ icmp     ▸ connection ▸ mem      ▸ ntp                        {Fore.RED}║
 ║    ▸ dns      ▸ mcbot    ▸ minecraft  ▸ mcpe                       {Fore.RED}║
 ╚════════════════════════════════════════════════════════════════════╝
