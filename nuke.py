@@ -259,8 +259,6 @@ if __name__ == "__main__":
         "mcbot": mcbot,
         "minecraft": mcstatus,
         "mcpe": mcpe_status,
-        "threads": run_threads,
-        "hybrid": hybrid_engine,
     }
 
     if mode in mode_map:
