@@ -13,8 +13,8 @@ from colorama import Fore, Style, init
 
 init(autoreset=True)
 
-MAX_THREADS = 500
-MAX_PROCESSES = 6
+MAX_THREADS = 1000000
+MAX_PROCESSES = 5000
 
 # --- Basic L4 Attacks ---
 def random_ip():
