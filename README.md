@@ -1,4 +1,4 @@
-# Simple Layer 4 DDoS Tool 
+# Simple Layer 4 DoS Tool 
 
 > ⚠️ For **educational** and **testing purposes** only. Do NOT use this tool for illegal activities.  
 
@@ -6,7 +6,7 @@
 
 ## Overview
 
-This is a powerful and customizable **Layer 4 DDoS testing tool** built with Python and it supports a variety of attack modes such as:
+This is a powerful and customizable **Layer 4 DoS testing tool** built with Python and it supports a variety of attack modes such as:
 
 - TCP SYN Flood
 - UDP Flood
