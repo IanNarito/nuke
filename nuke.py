@@ -16,7 +16,7 @@ from mcstatus import JavaServer
 init(autoreset=True)
 
 MAX_THREADS = 10000
-MAX_PROCESSES = 100
+MAX_PROCESSES = 1000
 
 # --- Basic L4 Attacks ---
 def random_ip():
